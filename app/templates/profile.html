@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Your Profile{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+  <h1>👤 Account Settings</h1>
+
+  <div class="profile-card">
+    <img src="{{ user.avatar_url }}" alt="Avatar" class="avatar">
+    <div class="profile-details">
+      <h2>{{ user.name }}</h2>
+      <p>Email: jeremy@example.com</p> <!-- Optional: stubbed -->
+      <p>Role: Administrator</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>Manage Your Account</h2>
+  <ul class="account-actions">
+    <li><a href="#">🔐 Change Password</a></li>
+    <li><a href="#">🎫 Manage Subscription</a></li>
+    <li><a href="#">📤 Export Data</a></li>
+    <li><a href="#">🚪 Sign Out</a></li>
+  </ul>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+  .profile-container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+  }
+
+  .profile-card {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 20px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+
+  .avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 20px;
+    border: 2px solid #ccc;
+  }
+
+  .profile-details h2 {
+    margin: 0;
+    font-size: 1.5em;
+  }
+
+  .account-actions {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+  }
+
+  .account-actions li {
+    margin-bottom: 10px;
+  }
+
+  .account-actions a {
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  .account-actions a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}

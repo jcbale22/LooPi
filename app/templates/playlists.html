@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Manage Playlists{% endblock %}
+
+{% block content %}
+  <h1>Manage Playlists</h1>
+
+  <!-- Flash Messages -->
+  {% if message %}
+    <div class="message success">✅ {{ message }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="message error">❌ {{ error }}</div>
+  {% endif %}
+
+  <!-- Add New Playlist Form -->
+  <h2>Add New Playlist</h2>
+  <form method="post" action="/playlists/add" 
+        style="display: flex; gap: 10px; align-items: center;">
+    <label for="name">Name:</label>
+    <input type="text" name="name" required>
+
+    <label for="color">Color:</label>
+    <input type="color" name="color" value="#e0e0e0" required>
+
+    <button type="submit">Add</button>
+  </form>
+
+  <!-- Existing Playlists Table -->
+  <h2>Current Playlists</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Preview</th>
+        <th>Change Color</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for name, color in playlists.items() %}
+      <tr>
+        <td>{{ name }}</td>
+
+        <!-- Color Preview Pill -->
+        <td>
+          <span class="pill" style="background-color: {{ color }};" for="color_{{ loop.index }}">
+            {{ name }}
+          </span>
+        </td>
+
+        <!-- Inline Color Picker Form -->
+        <td>
+          <form method="post" action="/playlists/update" style="position: relative;">
+            <input type="hidden" name="name" value="{{ name }}">
+            <label class="pill" for="color_{{ loop.index }}" style="background-color: {{ color }};">
+              {{ name }}
+            </label>
+            <input type="color"
+                   name="color"
+                   id="color_{{ loop.index }}"
+                   class="hidden-color-input"
+                   value="{{ color }}"
+                   onchange="this.form.submit()" />
+          </form>
+        </td>
+
+        <!-- Delete Playlist Form -->
+        <td>
+          <form method="post" action="/playlists/delete">
+            <input type="hidden" name="name" value="{{ name }}">
+            <button type="submit" style="background: #b91c1c;">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="/admin" class="back-link">← Back to Admin Panel</a>
+{% endblock %}
+
+{% block body_extra %}
+  <style>
+    h1, h2 {
+      margin-bottom: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background: white;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    .hidden-color-input {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      pointer-events: auto;
+      width: 40px;
+      height: 40px;
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    button {
+      padding: 6px 12px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #222;
+    }
+
+    .pill {
+      cursor: pointer;
+      border: 1px solid #ccc;
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .message {
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    .message.success {
+      color: #155724;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      color: #721c24;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
+
+    .back-link {
+      margin-top: 20px;
+      display: block;
+    }
+  </style>
+
+  <script>
+    document.querySelectorAll('.pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const inputId = pill.getAttribute('for');
+        const colorInput = document.getElementById(inputId);
+        if (colorInput) colorInput.click();
+      });
+    });
+
+    function getTextColor(hex) {
+      hex = hex.replace("#", "");
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+      return yiq >= 128 ? 'black' : 'white';
+    }
+
+    document.querySelectorAll(".pill").forEach(pill => {
+      const bgColor = getComputedStyle(pill).backgroundColor;
+      const rgb = bgColor.match(/\d+/g).map(Number);
+      const hex = rgb.map(x => x.toString(16).padStart(2, '0')).join('');
+      const textColor = getTextColor(hex);
+      pill.style.color = textColor;
+    });
+  </script>
+{% endblock %}

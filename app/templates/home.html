@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to LooPi{% endblock %}
+
+{% block content %}
+  <h1>Welcome, {{ user.name }}</h1>
+
+  <p>LooPi helps you manage and display dynamic visual content through playlists and metadata-driven control.</p>
+
+  <div style="margin-top: 24px;">
+    <a href="/upload"><button>📤 Upload Media</button></a>
+    <a href="/display" target="_blank" rel="noopener">
+  <button>🖥️ Launch Display</button>
+</a>
+    <a href="/admin"><button>🗂 Admin Dashboard</button></a>
+    <a href="/playlists"><button>🎨 Manage Playlists</button></a>
+  </div>
+{% endblock %}

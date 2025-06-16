@@ -1,0 +1,76 @@
+{# ------------------------------------------------------------------------- #}
+{#  File:    base.html                                                       #}
+{#  Purpose: Master layout for ALL pages – brand bar + content placeholder   #}
+{# ------------------------------------------------------------------------- #}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}LooPi{% endblock %}</title>
+
+  <link rel="stylesheet" href="/static/css/main.css" />
+  {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- ========== NAV BAR ================================================== -->
+  <header class="navbar">
+    <!-- Brand / Logo -->
+ <div class="nav-left">
+  <a href="/" class="logo">
+    <img src="/static/img/loopiavatar.svg" alt="LooPi Logo" class="logo-avatar" />
+  </a>
+ <a href="/display" target="_blank" rel="noopener" class="nav-launch-display">Launch Display</a>
+   <a href="/upload">New Upload</a> 
+  <a href="/playlists">Playlists</a>
+  <a href="/admin">Admin</a>
+</div>
+
+
+    <!-- Profile / Account -->
+    <div class="nav-right">
+      <div class="profile">
+        <button class="profile-btn" id="profileToggle">
+          <!-- Avatar image (use placeholder png until user uploads one) -->
+        {% if user.avatar_url %}
+  <img class="avatar" src="{{ user.avatar_url }}" alt="avatar" />
+{% else %}
+  <div class="initials-avatar">
+    {{ user.name.split()[0][0] }}{{ user.name.split()[-1][0] }}
+  </div>
+{% endif %}
+<span>{{ user.name }}</span>
+
+        </button>
+
+        <div class="dropdown" id="profileDropdown">
+          <a href="/profile">Profile</a>
+          <a href="/subscription">Manage Subscription</a>
+          <button onclick="location.href='/logout'">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== PAGE CONTENT ============================================ -->
+  <main style="padding: 24px;">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ========== SIMPLE JS (toggle dropdown) ============================== -->
+  <script>
+    const toggle  = document.getElementById('profileToggle');
+    const menu    = document.getElementById('profileDropdown');
+    toggle?.addEventListener('click', () => {
+      menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+    });
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', e => {
+      if (!toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display = 'none';
+    });
+  </script>
+  {% block body_extra %}{% endblock %}
+</body>
+</html>

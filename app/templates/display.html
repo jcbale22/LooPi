@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LooPi Display</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      cursor: none; /* hide mouse unless moving */
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    /* === Controls Overlay === */
+    #controls {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    #fullscreen-toggle {
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      background: #ffffff22;
+      color: white;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
+
+    #fullscreen-toggle:hover {
+      background: #ffffff44;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- === Controls Overlay === -->
+  <div id="controls">
+    <button id="fullscreen-toggle">⛶ Fullscreen</button>
+  </div>
+
+  <!-- === Initial Image Display === -->
+  <img id="slideshow" src="{{ '/uploads/' + images[0] if images else '/static/default.png' }}" alt="Slideshow Image" />
+
+  <script>
+    // Slideshow logic
+    const images = {{ images | tojson }};
+    let index = 0;
+
+    function showNextImage() {
+      index = (index + 1) % images.length;
+      const slideshow = document.getElementById("slideshow");
+
+      slideshow.style.opacity = 0;
+      setTimeout(() => {
+        slideshow.src = "/uploads/" + images[index];
+        slideshow.style.opacity = 1;
+      }, 200);
+    }
+
+    setInterval(showNextImage, 8000); // Change image every 8 seconds
+  </script>
+
+  <!-- === Load Fullscreen JS === -->
+  <script src="/static/js/display.js"></script>
+</body>
+</html>

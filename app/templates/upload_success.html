@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Successful | LooPi{% endblock %}
+
+{% block head_extra %}
+  <meta http-equiv="refresh" content="5;url=/upload" />
+{% endblock %}
+
+{% block content %}
+  <div class="upload-success">
+    <div class="success-icon">✅</div>
+    <h1>Upload Successful!</h1>
+
+    <p><strong>File:</strong> {{ filename }}</p>
+    <p><strong>Start Date:</strong> {{ start_date }}</p>
+    <p><strong>End Date:</strong> {{ end_date }}</p>
+
+    {% if playlist_pills %}
+      <p><strong>Playlists:</strong></p>
+      <div class="pill-group">
+        {% for pill in playlist_pills %}
+          <span class="pill" style="background-color: {{ pill.color }}">{{ pill.name }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <img src="/uploads/{{ filename }}" alt="Uploaded image preview" class="preview-image" />
+
+    <p class="redirect-note">Redirecting to upload page in 5 seconds...</p>
+    <p><a href="/upload">Click here if not redirected</a></p>
+  </div>
+{% endblock %}

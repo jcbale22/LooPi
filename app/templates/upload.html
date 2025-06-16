@@ -1,0 +1,45 @@
+{# app/templates/upload.html #}
+{% extends "base.html" %}
+
+{% block title %}Upload Image | LooPi{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2>New Media Upload</h2>
+
+  <form action="/upload" method="post" enctype="multipart/form-data" class="form-stack">
+    <!-- Upload Image File -->
+    <label for="file">Image File</label>
+    <input id="file" type="file" name="file" accept="image/*" required>
+
+    <!-- Date Range -->
+    <div class="two-column">
+      <div>
+        <label for="start_date">Start Date</label>
+        <input id="start_date" type="date" name="start_date" required>
+      </div>
+      <div>
+        <label for="end_date">End Date</label>
+        <input id="end_date" type="date" name="end_date" required>
+      </div>
+    </div>
+
+    <!-- Playlist Selection -->
+    <label for="playlists">Assign to Playlists</label>
+    <select id="playlists" name="playlists" multiple size="4">
+      {% for name, color in playlists.items() %}
+        <option value="{{ name }}">{{ name }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Optional: Create New Playlist -->
+    <label for="new_playlist">Create New Playlist (Optional)</label>
+    <input id="new_playlist" type="text" name="new_playlist" placeholder="e.g. Fellowship Hall">
+
+    <label for="new_color">Color (Hex Code)</label>
+    <input id="new_color" type="color" name="new_color" value="#cccccc">
+
+    <button type="submit">🚀 Upload & Assign</button>
+  </form>
+</div>
+{% endblock %}

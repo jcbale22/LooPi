@@ -1,0 +1,12 @@
+{
+  "device_001": {
+    "name": "Fellowship Hall TV",
+    "active_playlist": "Sunday Loop",
+    "last_seen": "2025-06-16T04:00:04.847398"
+  },
+  "device_002": {
+    "name": "Lobby Monitor",
+    "active_playlist": "Welcome Series",
+    "last_seen": "2025-06-16T04:00:04.847412"
+  }
+}
