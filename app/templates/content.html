@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Content{% endblock %}
+
+{% block content %}
+<h1>Content Manager</h1>
+
+{% if message %}
+  <div class="message success">{{ message }}</div>
+{% elif error %}
+  <div class="message error">{{ error }}</div>
+{% endif %}
+
+<div class="container">
+  {% for file in files %}
+    <div class="card content-card" style="align-items: stretch;">
+
+      <!-- Thumbnail -->
+      <div class="thumb-preview">
+        <img src="/static/uploads/{{ file.filename }}" alt="{{ file.filename }}">
+      </div>
+
+      <!-- Card View -->
+      <div class="card-view" style="flex: 1; width: 100%; display: flex; flex-direction: column;">
+
+        <!-- Summary Mode -->
+        <div class="summary-mode" onclick="toggleCardMode(this)">
+          <div class="summary-header">
+            <strong class="file-name">{{ file.filename }}</strong>
+            <div class="date-range">
+              <img src="/static/icons/lucide/calendar-days.svg" class="icon-svg" />
+              {{ file.start | datetimeformat('%m/%d/%Y') }}<img src="/static/icons/lucide/move-right.svg" class="icon-svg" />{{ file.end | datetimeformat('%m/%d/%Y') }}
+            </div>
+            <div class="playlist-summary">
+              {% for name in file.playlists %}
+                {% set color = playlists[name].color if name in playlists else '#ccc' %}
+                <span class="pill" style="background-color: {{ color }}">{{ name }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Mode -->
+        <form id="form-{{ loop.index }}" method="post" action="/content/update" class="edit-mode" style="flex: 1;">
+          <input type="hidden" name="original_filename" value="{{ file.filename }}">
+
+          <div class="edit-header">
+            <input type="text" name="filename" class="editable-filename" value="{{ file.filename }}" style="width: 80%; max-width: 80%; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 1rem; border: 1px solid #ccc; font-family: inherit;" />
+          </div>
+
+          <div class="form-grid tight" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <label style="max-width: 80%; font-weight: 500;">Start Date:
+              <input type="date" name="start_date" value="{{ file.start }}" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit;">
+            </label>
+            <label style="max-width: 80%; font-weight: 500;">End Date:
+              <input type="date" name="end_date" value="{{ file.end }}" required style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit;">
+            </label>
+          </div>
+
+          <div class="pill-container">
+            {% for name, info in playlists.items() %}
+              {% set is_active = name in file.playlists %}
+              <label class="pill playlist-toggle {% if is_active %}active{% endif %}"
+                     style="background-color: {% if is_active %}{{ info.color }}{% else %}#ccc{% endif %}; color: {% if is_active %}#fff{% else %}#444{% endif %};"
+                     data-color="{{ info.color }}">
+                <input type="checkbox" name="playlists" value="{{ name }}" {% if is_active %}checked{% endif %} hidden>
+                {{ name }}
+              </label>
+            {% endfor %}
+          </div>
+
+          <!-- Card Actions (only visible in edit mode) -->
+          <div class="card-actions" style="display: flex; flex-direction: column; gap: 8px; position: absolute; top: 16px; right: 16px; z-index: 5;">
+            <button type="button" class="icon-btn cancel-btn" title="Cancel">
+              <img src="/static/icons/lucide/x.svg" />
+            </button>
+            <button type="submit" form="form-{{ loop.index }}" class="icon-btn save-btn" title="Save" disabled>
+              <img src="/static/icons/lucide/save.svg" />
+            </button>
+            <button type="button" class="icon-btn delete-btn" title="Delete" onclick="openDeleteModal('{{ file.filename }}')">
+              <img src="/static/icons/lucide/trash.svg" />
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Confirm Delete</h3>
+    <p id="deletePromptText">Are you sure you want to delete this file?</p>
+    <div class="modal-actions">
+  <button class="btn" onclick="closeDeleteModal()">Cancel</button>
+  <form id="deleteForm" method="post" action="/content/delete">
+    <input type="hidden" name="filename" id="deleteFilename">
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+</div>
+  </div>
+</div>
+
+<!-- JS for toggle/edit/save logic -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  window.toggleCardMode = function(summaryElement) {
+    const card = summaryElement.closest('.content-card');
+    if (card) {
+      card.classList.add('editing');
+    }
+  };
+
+  document.querySelectorAll(".cancel-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const card = btn.closest(".content-card");
+      if (card) {
+        card.classList.remove("editing");
+      }
+    });
+  });
+
+  document.querySelectorAll('.edit-mode').forEach(form => {
+    const saveBtn = document.querySelector(`button[form='${form.id}']`);
+    const inputs = form.querySelectorAll('input');
+    const original = {};
+
+    inputs.forEach(input => {
+      const key = input.name + (input.type === "checkbox" ? "_" + input.value : "");
+      original[key] = input.type === "checkbox" ? input.checked : input.value;
+    });
+
+    inputs.forEach(input => {
+      input.addEventListener("change", () => {
+        let changed = false;
+        inputs.forEach(input => {
+          const key = input.name + (input.type === "checkbox" ? "_" + input.value : "");
+          const current = input.type === "checkbox" ? input.checked : input.value;
+          if (original[key] !== current) changed = true;
+        });
+        saveBtn.disabled = !changed;
+        saveBtn.style.opacity = changed ? "1" : "0.4";
+      });
+    });
+  });
+
+  document.querySelectorAll(".playlist-toggle").forEach(el => {
+    el.addEventListener("click", () => {
+      const input = el.querySelector("input[type='checkbox']");
+      if (input) {
+        input.checked = !input.checked;
+        el.classList.toggle("active");
+        el.style.backgroundColor = input.checked ? el.dataset.color || "#666" : "#ccc";
+        el.style.color = input.checked ? "#fff" : "#444";
+        input.dispatchEvent(new Event("change"));
+      }
+    });
+  });
+
+  window.openDeleteModal = function(filename) {
+    const modal = document.getElementById("deleteModal");
+    const input = document.getElementById("deleteFilename");
+    const prompt = document.getElementById("deletePromptText");
+    input.value = filename;
+    prompt.textContent = `Are you sure you want to delete "${filename}"?`;
+    modal.classList.remove("hidden");
+  };
+
+  window.closeDeleteModal = function() {
+    document.getElementById("deleteModal").classList.add("hidden");
+  };
+});
+</script>
+{% endblock %}

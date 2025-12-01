@@ -1,3 +1,45 @@
 {
-  "Cornerstone Sanctuary": "#00857d"
+  "Cornerstone Sanctuary": {
+    "color": "#000857",
+    "devices": [
+      "Fellowship Hall TV",
+      "Lobby Monitor"
+    ],
+    "images": [
+      "Marriage Breakfast June 2025 w:QR.png",
+      "Men's Breakfast July w:QR .png"
+    ]
+  },
+  "Test Playlist": {
+    "color": "#000000",
+    "devices": [
+      "Test123",
+      "TestABC"
+    ],
+    "images": [
+      "Marriage Breakfast June 2025 w:QR.png",
+      "Gospel of Luke Graphic.jpeg",
+      "Men's Breakfast July w:QR .png"
+    ]
+  },
+  "Cornerstone Kids": {
+    "color": "#e5d738",
+    "devices": [],
+    "images": [
+      "SAM\u2019S GARAGE.png",
+      "Marriage Breakfast June 2025 w:QR.png",
+      "Gospel of Luke Graphic.jpeg",
+      "Men's Breakfast July w:QR .png"
+    ]
+  },
+  "Playlist Test": {
+    "color": "#40b210",
+    "images": [
+      "Marriage Breakfast June 2025 w:QR.png",
+      "SAM\u2019S GARAGE.png",
+      "Gospel of Luke Graphic.jpeg",
+      "Men's Breakfast July w:QR .png"
+    ],
+    "devices": []
+  }
 }

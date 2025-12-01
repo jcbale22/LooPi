@@ -1,16 +1,76 @@
 {% extends "base.html" %}
-
 {% block title %}Manage Subscription{% endblock %}
 
 {% block content %}
-  <h1>Manage Subscription</h1>
-  <p>This is a placeholder page for managing billing or subscription preferences.</p>
+<div style="display: flex; justify-content: center;">
+  <div class="card-profile" style="max-width: 960px; padding-bottom: 32px;">
+    <h1 style="margin-bottom: 24px; text-align: center;">Subscription Management</h1>
 
-  <ul>
-    <li>Current Plan: <strong>Free Tier</strong></li>
-    <li>Uploads per Month: Unlimited</li>
-    <li>Support Level: Email only</li>
-  </ul>
+    <!-- Current Plan -->
+    <div class="card-section" style="margin-bottom: 32px;">
+      <h3>Current Plan</h3>
+      <p><strong>Plan:</strong> <span class="pill pill-small">Pro</span></p>
+      <p><strong>Status:</strong> <span class="pill pill-small">Active</span></p>
+      <p><strong>Renews:</strong> August 20, 2025</p>
+    </div>
 
-  <p>Upgrade options and billing features coming soon.</p>
+    <!-- Billing Info -->
+    <div class="card-section" style="margin-bottom: 32px;">
+      <h3>Billing Details</h3>
+      <p><strong>Payment Method:</strong> Visa ending in 1234</p>
+      <p><strong>Next Payment:</strong> $15.00 on August 20, 2025</p>
+      <a href="#" class="btn-link">
+        <img src="/static/icons/lucide/credit-card.svg" width="18" style="margin-right:6px; vertical-align:middle;" />
+        Update Payment Method
+      </a>
+    </div>
+
+    <!-- Invoices -->
+    <div class="card-section" style="margin-bottom: 32px;">
+      <h3>Past Invoices</h3>
+      <ul class="invoice-list">
+        <li style="display: flex; align-items: center; justify-content: space-between;">
+          <span>Invoice #12345 - July 2025</span>
+          <a href="#" class="icon-btn" title="Download">
+            <img src="/static/icons/lucide/download.svg" width="16" height="16" />
+          </a>
+        </li>
+        <li style="display: flex; align-items: center; justify-content: space-between;">
+          <span>Invoice #12344 - June 2025</span>
+          <a href="#" class="icon-btn" title="Download">
+            <img src="/static/icons/lucide/download.svg" width="16" height="16" />
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Subscription Portal -->
+    <div class="card-section" style="margin-bottom: 32px;">
+      <h3>Manage Billing</h3>
+      <p>To manage your billing, open the secure Stripe portal below.</p>
+      <a href="#" class="btn btn-primary">Open Billing Portal</a>
+    </div>
+
+    <!-- Organization -->
+    <div class="card-section" style="margin-bottom: 32px;">
+      <h3>Organization</h3>
+      <p><strong>Team Name:</strong> Loopi Inc</p>
+      <a href="#" class="btn-link">
+        <img src="/static/icons/lucide/users.svg" width="18" style="margin-right:6px; vertical-align:middle;" />
+        Manage Team
+      </a>
+    </div>
+
+    <!-- Cancel Subscription -->
+    <div class="card-section">
+      <h3>Cancel Subscription</h3>
+      <p>Need to pause or stop your subscription?</p>
+      <a href="#" class="btn btn-danger">
+        <img src="/static/icons/lucide/x-octagon.svg" width="18" style="margin-right:6px; vertical-align:middle;" />
+        Cancel Subscription
+      </a>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

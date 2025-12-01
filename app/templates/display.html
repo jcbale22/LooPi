@@ -79,5 +79,34 @@
 
   <!-- === Load Fullscreen JS === -->
   <script src="/static/js/display.js"></script>
+
+  <script>
+  const heartbeatUrl = "/devices/heartbeat";
+
+  async function sendHeartbeat() {
+    try {
+      const res = await fetch(heartbeatUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (!res.ok) {
+        console.warn("Heartbeat failed:", res.status);
+      } else {
+        console.log("Heartbeat sent successfully");
+      }
+    } catch (err) {
+      console.error("Heartbeat error:", err);
+    }
+  }
+
+  // Initial ping
+  sendHeartbeat();
+
+  // Ping every 10 minutes
+  setInterval(sendHeartbeat, 10 * 60 * 1000);
+</script>
+
 </body>
 </html>

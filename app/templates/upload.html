@@ -4,42 +4,126 @@
 {% block title %}Upload Image | LooPi{% endblock %}
 
 {% block content %}
-<div class="card">
-  <h2>New Media Upload</h2>
+<h1>Media Upload</h1>
 
-  <form action="/upload" method="post" enctype="multipart/form-data" class="form-stack">
-    <!-- Upload Image File -->
-    <label for="file">Image File</label>
-    <input id="file" type="file" name="file" accept="image/*" required>
+<div class="card card-style" style="max-width: 960px; margin-top: 24px; display: flex; gap: 32px; align-items: flex-start;">
+  <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form" style="flex: 1; display: flex; flex-direction: column; gap: 24px;">
 
-    <!-- Date Range -->
-    <div class="two-column">
-      <div>
-        <label for="start_date">Start Date</label>
-        <input id="start_date" type="date" name="start_date" required>
-      </div>
-      <div>
-        <label for="end_date">End Date</label>
-        <input id="end_date" type="date" name="end_date" required>
+    <!-- Header -->
+    <h2>New Upload</h2>
+
+    <!-- File Input -->
+    <div class="file-block">
+      <input type="file" id="file-input" name="files" accept="image/*" multiple required style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+    </div>
+
+  <!-- Date Range -->
+<div class="form-grid">
+  <div style="display: flex; flex-direction: column;">
+    <label for="start_date" class="form-label" style="margin-bottom: 4px;">Start Date</label>
+    <input id="start_date" type="date" name="start_date" required style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+  </div>
+  <div style="display: flex; flex-direction: column;">
+    <label for="end_date" class="form-label" style="margin-bottom: 4px;">End Date</label>
+    <input id="end_date" type="date" name="end_date" required style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+  </div>
+</div>
+
+
+    <!-- Playlist Selection Pills -->
+    <div>
+      <label class="form-label">Assign to Playlists</label>
+      <div class="pill-container">
+        {% for name, info in playlists.items() %}
+          <label class="pill playlist-toggle"
+                 data-color="{{ info.color }}">
+            <input type="checkbox" name="playlists" value="{{ name }}" hidden>
+            {{ name }}
+          </label>
+        {% endfor %}
       </div>
     </div>
 
-    <!-- Playlist Selection -->
-    <label for="playlists">Assign to Playlists</label>
-    <select id="playlists" name="playlists" multiple size="4">
-      {% for name, color in playlists.items() %}
-        <option value="{{ name }}">{{ name }}</option>
-      {% endfor %}
-    </select>
+    <!-- Create New Playlist -->
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;">
+      <input id="playlist-name" type="text" name="new_playlist" maxlength="50" placeholder="New playlist name (optional)" style="flex:2; min-width:200px; max-width:250px; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+      <label for="color-input" style="margin-bottom: 0; font-weight: 600;">Color:</label>
+      <span id="color-pill" class="pill" style="background-color:#cccccc; color:#333; cursor:pointer; text-align:center; min-width:80px; padding: 6px 12px; border-radius: 20px;">Preview</span>
+      <input type="color" name="new_color" id="color-input" value="#cccccc" class="hidden-color-input">
+    </div>
 
-    <!-- Optional: Create New Playlist -->
-    <label for="new_playlist">Create New Playlist (Optional)</label>
-    <input id="new_playlist" type="text" name="new_playlist" placeholder="e.g. Fellowship Hall">
-
-    <label for="new_color">Color (Hex Code)</label>
-    <input id="new_color" type="color" name="new_color" value="#cccccc">
-
-    <button type="submit">🚀 Upload & Assign</button>
+    <div style="display: flex; justify-content: center;">
+      <button type="submit" class="btn btn-primary">Upload & Assign</button>
+    </div>
   </form>
+
+  <!-- Preview Pane -->
+  <div id="preview-pane" style="flex: 0 0 300px; min-height: 180px; display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; padding-top: 4px;">
+    <!-- thumbnails inserted via JS -->
+  </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const nameInput = document.getElementById('playlist-name');
+  const colorPill = document.getElementById('color-pill');
+  const colorInput = document.getElementById('color-input');
+  const fileInput = document.getElementById('file-input');
+  const previewPane = document.getElementById('preview-pane');
+
+  nameInput.addEventListener('input', () => {
+    const val = nameInput.value.trim();
+    colorPill.textContent = val || 'Preview';
+  });
+
+  colorPill.addEventListener('click', () => {
+    colorInput.click();
+  });
+
+  document.querySelectorAll(".playlist-toggle").forEach(el => {
+    const input = el.querySelector("input[type='checkbox']");
+    const updateStyle = () => {
+      const isChecked = input.checked;
+      el.classList.toggle("active", isChecked);
+      el.style.backgroundColor = isChecked ? (el.dataset.color || "#666") : "#ccc";
+      el.style.color = isChecked ? "#fff" : "#444";
+    };
+    updateStyle();
+    el.addEventListener("click", () => {
+      input.checked = !input.checked;
+      updateStyle();
+    });
+  });
+
+  fileInput.addEventListener('change', () => {
+    previewPane.innerHTML = '';
+    Array.from(fileInput.files).forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const div = document.createElement('div');
+        div.className = 'thumb-item';
+        div.style = 'position: relative; border-radius: 12px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 4px; width: 100%; max-width: 250px;';
+        div.innerHTML = `
+          <img src="${e.target.result}" style="width: 100%; height: auto; max-height: 120px; border-radius: 8px; object-fit: cover;">
+          <button class="remove-thumb" data-index="${index}" style="position: absolute; bottom: 4px; right: 4px; background: #eee; border-radius: 50%; border: none; cursor: pointer; padding: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+            <img src="/static/icons/lucide/circle-x.svg" class="remove-icon" alt="Remove">
+          </button>
+        `;
+        previewPane.appendChild(div);
+
+        div.querySelector('.remove-thumb').addEventListener('click', (e) => {
+          e.preventDefault();
+          const dt = new DataTransfer();
+          Array.from(fileInput.files).forEach((f, i) => {
+            if (i !== index) dt.items.add(f);
+          });
+          fileInput.files = dt.files;
+          div.remove();
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+});
+</script>
 {% endblock %}

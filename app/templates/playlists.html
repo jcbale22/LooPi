@@ -2,189 +2,281 @@
 {% block title %}Manage Playlists{% endblock %}
 
 {% block content %}
-  <h1>Manage Playlists</h1>
+<h1>Playlist Manager</h1>
 
-  <!-- Flash Messages -->
-  {% if message %}
-    <div class="message success">✅ {{ message }}</div>
-  {% endif %}
-  {% if error %}
-    <div class="message error">❌ {{ error }}</div>
-  {% endif %}
+<!-- Toast Message Container -->
+<div id="toast" class="toast" style="display:none;"></div>
+{% if message %}<script>showToast("{{ message }}","success")</script>{% endif %}
+{% if error %}<script>showToast("{{ error }}","error")</script>{% endif %}
 
-  <!-- Add New Playlist Form -->
-  <h2>Add New Playlist</h2>
-  <form method="post" action="/playlists/add" 
-        style="display: flex; gap: 10px; align-items: center;">
-    <label for="name">Name:</label>
-    <input type="text" name="name" required>
-
-    <label for="color">Color:</label>
-    <input type="color" name="color" value="#e0e0e0" required>
-
-    <button type="submit">Add</button>
+<!-- Add New Playlist -->
+<div class="card with-preview-offset" style="margin-bottom:32px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 10px; background: #fff; max-width: 960px; min-width: 960px; margin-left: 24px;">
+  <h2 style="margin-bottom:16px;">Add New Playlist</h2>
+  <form method="post" action="/playlists/add" style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;">
+    <input id="playlist-name" type="text" name="name" required maxlength="50" placeholder="Playlist name" style="flex:2; min-width:200px; max-width:250px; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+    <label for="color-input" style="margin-bottom: 0; font-weight: 600;">Color:</label>
+    <span id="color-pill" class="pill" style="background-color:#e0e0e0; color:#333; cursor:pointer; text-align:center; min-width:80px; padding: 6px 12px; border-radius: 20px;">Preview</span>
+    <input type="color" name="color" id="color-input" value="#e0e0e0" class="hidden-color-input" required>
+    <button id="add-btn" type="submit" class="btn btn-primary btn-small" disabled style="margin-left:auto;">Add</button>
   </form>
+</div>
 
-  <!-- Existing Playlists Table -->
-  <h2>Current Playlists</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Preview</th>
-        <th>Change Color</th>
-        <th>Delete</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for name, color in playlists.items() %}
-      <tr>
-        <td>{{ name }}</td>
+<!-- Preview Pane -->
+<div class="preview-pane card-style">
+  <h3 style="margin-bottom:8px;">Preview</h3>
+  <p id="now-playing-label" style="text-align: center; font-weight: 600; color: #555; margin-bottom: 8px;">No playlist selected</p>
+  <div id="preview-frame" style="height:300px; display:flex; align-items:center; justify-content:center; background:#f3f3f3; border-radius:8px; overflow:hidden;">
+    <p style="color:#aaa;">No preview</p>
+  </div>
+  <div style="display: flex; justify-content: center; gap: 12px; margin-top: 8px;">
+    <button id="prev-btn" class="icon-btn transparent-btn">
+      <img src="/static/icons/lucide/skip-back.svg" width="24" height="24" alt="Previous" />
+    </button>
+    <button id="pause-play-btn" class="icon-btn transparent-btn">
+      <img src="/static/icons/lucide/pause.svg" width="24" height="24" alt="Pause" />
+    </button>
+    <button id="next-btn" class="icon-btn transparent-btn">
+      <img src="/static/icons/lucide/skip-forward.svg" width="24" height="24" alt="Next" />
+    </button>
+  </div>
+</div>
 
-        <!-- Color Preview Pill -->
-        <td>
-          <span class="pill" style="background-color: {{ color }};" for="color_{{ loop.index }}">
-            {{ name }}
-          </span>
-        </td>
+<!-- Playlist Cards -->
+<div class="playlist-grid with-preview-offset" id="playlistAccordion" style="max-width: 960px; min-width: 960px; margin-left: 24px;">
+  {% for name, info in playlists.items() %}
+    {% set color = info.color %}
+    {% set imgs = info.images %}
+    {% set devices = info.devices %}
 
-        <!-- Inline Color Picker Form -->
-        <td>
-          <form method="post" action="/playlists/update" style="position: relative;">
-            <input type="hidden" name="name" value="{{ name }}">
-            <label class="pill" for="color_{{ loop.index }}" style="background-color: {{ color }};">
-              {{ name }}
-            </label>
-            <input type="color"
-                   name="color"
-                   id="color_{{ loop.index }}"
-                   class="hidden-color-input"
-                   value="{{ color }}"
-                   onchange="this.form.submit()" />
-          </form>
-        </td>
+    <div class="card playlist-card" data-playlist="{{ name }}" style="min-height:300px; min-width:960px; display: flex; flex-direction: column; gap: 16px;">
+      <div class="card-section">
+        <strong>Playlist</strong>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="pill editable-pill" contenteditable="true" style="background-color:{{ color }}" id="preview-pill-{{ loop.index }}">{{ name }}</span>
+          <span class="badge">{{ imgs|length }}</span>
+          <button class="icon-btn transparent-btn play-btn" data-name="{{ name }}" data-images='{{ imgs|tojson }}'>
+            <img src="/static/icons/lucide/play.svg" width="20" height="20" alt="Play" />
+          </button>
+          <button class="icon-btn transparent-btn delete-btn" data-name="{{ name }}">
+            <img src="/static/icons/lucide/trash.svg" width="20" height="20" alt="Delete" />
+          </button>
+        </div>
+      </div>
 
-        <!-- Delete Playlist Form -->
-        <td>
-          <form method="post" action="/playlists/delete">
-            <input type="hidden" name="name" value="{{ name }}">
-            <button type="submit" style="background: #b91c1c;">Delete</button>
-          </form>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+      <div class="card-section">
+        <strong>Devices</strong>
+        <div>
+          {% if devices %}
+            {% for device in devices %}
+              <span class="pill pill-small" style="background-color:#eee;color:#333;">{{ device }}</span>
+            {% endfor %}
+          {% else %}
+            <span class="pill pill-small pill-red">Unassigned</span>
+          {% endif %}
+        </div>
+      </div>
 
-  <a href="/admin" class="back-link">← Back to Admin Panel</a>
-{% endblock %}
+      <div class="card-section">
+        <strong>Images</strong>
+        <div class="thumb-carousel-wrapper">
+          <button class="carousel-nav left">
+            <img src="/static/icons/lucide/chevron-left.svg" alt="Previous" />
+          </button>
+          <div class="thumb-carousel thumb-container" data-playlist="{{ name }}">
+            {% for f in imgs %}
+              <div class="thumb-item thumb" draggable="true" data-filename="{{ f }}" data-playlist="{{ name }}" style="position: relative;">
+                <img src="/static/uploads/{{ f }}" alt="{{ f }}" style="display: block; width: 100%; height: auto; border-radius: 4px;">
+                <img src="/static/icons/lucide/grip-vertical.svg" alt="Drag" style="position:absolute; top:4px; left:4px; width: 24px; height: 24px; opacity:0.7;" />
+                <button class="remove-thumb" title="Remove image" style="position:absolute; top:4px; right:4px; background:none; border:none; cursor:pointer; opacity:0.8; transition: opacity 0.2s ease;" onclick="confirmRemoveImage('{{ name }}', '{{ f }}')">
+                  <img src="/static/icons/lucide/circle-minus.svg" alt="Remove" style="width: 24px; height: 24px;" />
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+          <button class="carousel-nav right">
+            <img src="/static/icons/lucide/chevron-right.svg" alt="Next" />
+          </button>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
 
-{% block body_extra %}
-  <style>
-    h1, h2 {
-      margin-bottom: 10px;
+<!-- Modal Placeholder -->
+<div id="removeModal" class="modal hidden">
+  <div class="modal-content">
+    <p id="removeModalText"></p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeRemoveModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirmRemoveBtn">Remove</button>
+    </div>
+  </div>
+</div>
+
+<a href="/content" class="back-link" style="margin-top:32px;display:inline-block;">&larr; Back to Content Dashboard</a>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+function confirmRemoveImage(playlist, filename) {
+  const modal = document.getElementById('removeModal');
+  const modalText = document.getElementById('removeModalText');
+  const confirmBtn = document.getElementById('confirmRemoveBtn');
+
+  modalText.textContent = `Remove "${filename}" from playlist "${playlist}"?`;
+  confirmBtn.onclick = () => {
+    fetch(`/playlists/remove-image/${encodeURIComponent(playlist)}/${encodeURIComponent(filename)}`, {
+      method: 'POST'
+    })
+    .then(res => {
+      if (res.ok) location.reload();
+      else throw new Error('Failed to remove image');
+    })
+    .catch(console.error);
+  };
+  modal.classList.remove('hidden');
+}
+
+function closeRemoveModal() {
+  document.getElementById('removeModal').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const frame = document.getElementById('preview-frame');
+  const nowPlayingLabel = document.getElementById('now-playing-label');
+  const playPauseBtn = document.getElementById('pause-play-btn');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const playPauseIcon = playPauseBtn.querySelector('img');
+
+  let currentImages = [];
+  let currentIndex = 0;
+  let currentInterval = null;
+  let currentPlaylistName = '';
+  let activePlayBtn = null;
+
+  function updatePreviewFrame() {
+    if (!currentImages.length) {
+      frame.innerHTML = '<p style="color:#aaa;">No preview</p>';
+      return;
     }
+    const img = document.createElement('img');
+    img.src = `/static/uploads/${currentImages[currentIndex]}`;
+    img.style.maxHeight = '100%';
+    img.style.maxWidth = '100%';
+    frame.innerHTML = '';
+    frame.appendChild(img);
+  }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
-      background: white;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  function togglePlayback() {
+    if (currentInterval) {
+      clearInterval(currentInterval);
+      currentInterval = null;
+      playPauseIcon.src = '/static/icons/lucide/play.svg';
+      if (activePlayBtn) activePlayBtn.querySelector('img').src = '/static/icons/lucide/play.svg';
+    } else {
+      currentInterval = setInterval(() => {
+        currentIndex = (currentIndex + 1) % currentImages.length;
+        updatePreviewFrame();
+      }, 2000);
+      playPauseIcon.src = '/static/icons/lucide/pause.svg';
+      if (activePlayBtn) activePlayBtn.querySelector('img').src = '/static/icons/lucide/pause.svg';
     }
+  }
 
-    th, td {
-      padding: 12px 10px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
+  playPauseBtn.addEventListener('click', togglePlayback);
+  nextBtn.addEventListener('click', () => {
+    if (!currentImages.length) return;
+    currentIndex = (currentIndex + 1) % currentImages.length;
+    updatePreviewFrame();
+  });
+  prevBtn.addEventListener('click', () => {
+    if (!currentImages.length) return;
+    currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+    updatePreviewFrame();
+  });
 
-    .hidden-color-input {
-      position: absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      pointer-events: auto;
-      width: 40px;
-      height: 40px;
-      border: none;
-      padding: 0;
-      margin: 0;
-    }
+  document.querySelectorAll('.play-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const images = JSON.parse(btn.dataset.images || '[]');
+      const name = btn.dataset.name || 'Unnamed';
+      if (!images.length) return;
 
-    button {
-      padding: 6px 12px;
-      background-color: #444;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+      if (activePlayBtn === btn) {
+        togglePlayback();
+        return;
+      }
 
-    button:hover {
-      background-color: #222;
-    }
+      clearInterval(currentInterval);
 
-    .pill {
-      cursor: pointer;
-      border: 1px solid #ccc;
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 12px;
-      white-space: nowrap;
-    }
+      if (activePlayBtn && activePlayBtn !== btn) {
+        activePlayBtn.querySelector('img').src = '/static/icons/lucide/play.svg';
+      }
+      activePlayBtn = btn;
 
-    .message {
-      font-weight: bold;
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 10px;
-    }
+      currentImages = images;
+      currentIndex = 0;
+      currentPlaylistName = name;
+      nowPlayingLabel.textContent = `Now Playing: ${name}`;
+      updatePreviewFrame();
 
-    .message.success {
-      color: #155724;
-      background-color: #d4edda;
-      border: 1px solid #c3e6cb;
-    }
+      playPauseIcon.src = '/static/icons/lucide/pause.svg';
+      activePlayBtn.querySelector('img').src = '/static/icons/lucide/pause.svg';
 
-    .message.error {
-      color: #721c24;
-      background-color: #f8d7da;
-      border: 1px solid #f5c6cb;
-    }
-
-    .back-link {
-      margin-top: 20px;
-      display: block;
-    }
-  </style>
-
-  <script>
-    document.querySelectorAll('.pill').forEach(pill => {
-      pill.addEventListener('click', () => {
-        const inputId = pill.getAttribute('for');
-        const colorInput = document.getElementById(inputId);
-        if (colorInput) colorInput.click();
-      });
+      currentInterval = setInterval(() => {
+        currentIndex = (currentIndex + 1) % currentImages.length;
+        updatePreviewFrame();
+      }, 2000);
     });
+  });
 
-    function getTextColor(hex) {
-      hex = hex.replace("#", "");
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-      const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-      return yiq >= 128 ? 'black' : 'white';
+  // --- Carousel Scroll Logic ---
+  document.querySelectorAll('.thumb-carousel-wrapper').forEach(wrapper => {
+    const container = wrapper.querySelector('.thumb-carousel');
+    const leftBtn = wrapper.querySelector('.carousel-nav.left');
+    const rightBtn = wrapper.querySelector('.carousel-nav.right');
+    leftBtn?.addEventListener('click', () => container.scrollBy({ left: -200, behavior: 'smooth' }));
+    rightBtn?.addEventListener('click', () => container.scrollBy({ left: 200, behavior: 'smooth' }));
+  });
+
+  // --- Drag-and-Drop Logic ---
+  document.querySelectorAll('.thumb-carousel').forEach(container => {
+    new Sortable(container, {
+      group: 'playlists',
+      animation: 150,
+      onEnd: function (evt) {
+  const playlist = evt.to.dataset.playlist;
+  const filenames = Array.from(evt.to.querySelectorAll('.thumb-item')).map(el => el.dataset.filename);
+
+  fetch('/playlists/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      name: playlist,
+      order: filenames.join(',')
+    })
+  }).then(() => {
+    if (playlist === currentPlaylistName) {
+      currentImages = filenames;
+      currentIndex = 0;
+      updatePreviewFrame();
     }
 
-    document.querySelectorAll(".pill").forEach(pill => {
-      const bgColor = getComputedStyle(pill).backgroundColor;
-      const rgb = bgColor.match(/\d+/g).map(Number);
-      const hex = rgb.map(x => x.toString(16).padStart(2, '0')).join('');
-      const textColor = getTextColor(hex);
-      pill.style.color = textColor;
+    // 🔄 Update the play button's data-images attribute to match new order
+    document.querySelectorAll('.play-btn').forEach(btn => {
+      if (btn.dataset.name === playlist) {
+        btn.dataset.images = JSON.stringify(filenames);
+      }
     });
-  </script>
+    // 🎉 Toast confirmation
+  showToast(`Updated order for "${playlist}"`, "success");
+  
+  }).catch(console.error);
+}
+
+    });
+  });
+});
+</script>
+
+
 {% endblock %}

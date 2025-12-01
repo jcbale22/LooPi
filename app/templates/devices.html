@@ -1,0 +1,180 @@
+<!-- devices.html with inline editing & auto-save -->
+{% extends "base.html" %}
+{% block title %}Device Manager | LooPi{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>Device Manager</h1>
+  <p>Manage connected devices, assign playlists, register/claim displays.</p>
+
+  <!-- === Device Management Table === -->
+  <table>
+    <thead>
+      <tr>
+        <th>Device Name</th>
+        <th>Device ID</th>
+        <th>Active Playlist</th>
+        <th>License</th>
+        <th>Mark</th>
+        <th>Status</th>
+        <th>QR / Link</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for device_id, info in devices.items() %}
+      <tr>
+        <!-- Device Name (editable) -->
+        <td class="editable-td">
+          <div class="editable-wrapper" title="Click to edit">
+            <input name="name" data-device-id="{{ device_id }}" class="pill-input autosave editable-input" value="{{ info.name }}" style="text-align:center;">
+            <img src="/static/icons/lucide/pencil.svg" class="edit-icon" alt="Edit">
+          </div>
+        </td>
+
+        <!-- Device ID (editable) -->
+        <td class="editable-td">
+          <div class="editable-wrapper" title="Click to edit">
+            <input name="device_id" data-original-id="{{ device_id }}" class="pill-input autosave editable-input" value="{{ device_id }}" style="text-align:center;">
+            <img src="/static/icons/lucide/pencil.svg" class="edit-icon" alt="Edit">
+          </div>
+        </td>
+
+        <!-- Playlist Dropdown -->
+        <td>
+          <select name="active_playlist" data-device-id="{{ device_id }}" class="autosave rounded">
+            {% for p in playlists.keys() %}
+              <option value="{{ p }}" {% if p == info.active_playlist %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </td>
+
+        <!-- License Info -->
+        <td>
+          {% if info.days_left is not none %}
+            {% set tooltip = info.license_expires_at or 'n/a' %}
+            {% if info.days_left > 10 %}
+              <span class="pill pill-green" title="Expires: {{ tooltip }}">{{ info.days_left }}d</span>
+            {% elif info.days_left > 0 %}
+              <span class="pill pill-yellow" title="Expires: {{ tooltip }}">{{ info.days_left }}d</span>
+            {% else %}
+              <span class="pill pill-red" title="Expired">{{ info.days_left }}d</span>
+            {% endif %}
+          {% else %}
+            <span class="pill pill-red" title="No license">None</span>
+          {% endif %}
+        </td>
+
+        <!-- Mark Button -->
+        <td style="text-align:center; vertical-align: middle;">
+          {% if request.cookies.get('loopi_device_id') == device_id %}
+            <span class="pill pill-green" title="This browser is marked as this device">
+              <img src="/static/icons/lucide/shield-check.svg" class="icon-svg" alt="Marked">
+            </span>
+          {% else %}
+            <form action="/devices/mark" method="post">
+              <input type="hidden" name="device_id" value="{{ device_id }}">
+              <button type="submit" class="icon-btn transparent-btn" title="Mark this browser as this device">
+                <img src="/static/icons/lucide/square-check-big.svg" class="icon-svg" alt="Mark">
+              </button>
+            </form>
+          {% endif %}
+        </td>
+
+        <!-- Device Status -->
+        <td style="text-align:center; vertical-align: middle;">
+          {% if request.cookies.get('loopi_device_id') == device_id %}
+            <span class="pill pill-green" title="This device is this browser">
+              <img src="/static/icons/lucide/monitor-check.svg" class="icon-svg" alt="This"> This
+            </span>
+          {% elif not info.active %}
+            <span class="pill pill-red" title="Device is inactive">Inactive</span>
+          {% else %}
+            <span class="pill pill-yellow" title="Device is online">Active</span>
+          {% endif %}
+        </td>
+
+        <!-- QR Modal Trigger -->
+        <td style="text-align:center; vertical-align: middle; min-width:110px;">
+          <button type="button" class="icon-btn transparent-btn" title="View QR / Link" onclick="showQR('{{ device_id }}','{{ info.auth_token }}')">
+            <img src="/static/icons/lucide/qr-code.svg" class="icon-svg" alt="QR Code">
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- === New Device Registration === -->
+  <hr style="margin:40px 0;">
+  <h3>➕ Register New Device</h3>
+  <form class="form-grid" action="/devices/update" method="post">
+    <input name="device_id" placeholder="Device ID" required class="rounded">
+    <input name="name" placeholder="Device Name (optional)" class="rounded">
+    <select name="active_playlist" class="rounded">
+      <option value="">-- Playlist --</option>
+      {% for p in playlists.keys() %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-primary btn-small rounded" type="submit">Register</button>
+  </form>
+</div>
+
+<!-- === QR Modal Display === -->
+<div id="qrModal" style="display:none; position:fixed; inset:0; background:#0004; justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:#fff; padding:20px 30px; border-radius:12px; text-align:center; max-width: 340px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+    <canvas id="qrCanvas" style="margin-bottom: 16px;"></canvas>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px;">
+      <input id="claimLink" type="text" readonly style="flex:1; border:1px solid #ccc; padding:6px 10px; border-radius:6px; font-size: 0.85rem;">
+      <button type="button" class="icon-btn transparent-btn" onclick="copyClaimLink()" title="Copy claim link">
+        <img src="/static/icons/lucide/copy.svg" class="icon-svg" alt="Copy">
+      </button>
+    </div>
+    <button class="btn btn-secondary btn-small" onclick="qrModal.style.display='none'">Close</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrious@4/dist/qrious.min.js"></script>
+<script>
+function showQR(id, oldToken) {
+  fetch(`/devices/${id}/rotate_token`, { method: 'POST' })
+    .then(res => res.json())
+    .then(result => {
+      const token = result.new_token || oldToken;
+      const url = `${location.origin}/claim?device_id=${id}&auth_token=${token}`;
+      new QRious({ element: document.getElementById('qrCanvas'), value: url, size: 200 });
+      document.getElementById("claimLink").value = url;
+      document.getElementById("qrModal").style.display = "flex";
+    })
+    .catch(() => alert("Failed to generate QR code."));
+}
+
+function copyClaimLink() {
+  const input = document.getElementById("claimLink");
+  input.select();
+  input.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(input.value);
+}
+
+function autosaveChange(e) {
+  const row = e.target.closest('tr');
+  const name = row.querySelector('input[name="name"]').value;
+  const device_id_input = row.querySelector('input[name="device_id"]');
+  const device_id = device_id_input.dataset.originalId || device_id_input.value;
+  const new_id = device_id_input.value;
+  const playlist = row.querySelector('select[name="active_playlist"]').value;
+
+  const formData = new FormData();
+  formData.append('device_id', device_id);
+  formData.append('name', name);
+  formData.append('new_device_id', new_id);
+  formData.append('active_playlist', playlist);
+
+  fetch('/devices/update', { method: 'POST', body: formData });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.autosave').forEach(el => {
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'blur', autosaveChange);
+  });
+});
+</script>
+{% endblock %}

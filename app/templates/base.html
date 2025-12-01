@@ -17,32 +17,30 @@
 
   <!-- ========== NAV BAR ================================================== -->
   <header class="navbar">
-    <!-- Brand / Logo -->
- <div class="nav-left">
-  <a href="/" class="logo">
-    <img src="/static/img/loopiavatar.svg" alt="LooPi Logo" class="logo-avatar" />
-  </a>
- <a href="/display" target="_blank" rel="noopener" class="nav-launch-display">Launch Display</a>
-   <a href="/upload">New Upload</a> 
-  <a href="/playlists">Playlists</a>
-  <a href="/admin">Admin</a>
-</div>
+    <div class="nav-left">
+      <a href="/" class="logo">
+        <img src="/static/img/loopiavatar.svg" alt="LooPi Logo" class="logo-avatar" />
+      </a>
+      <a href="/display" target="_blank" rel="noopener" class="nav-launch-display">Display</a>
+      <a href="/upload">Upload</a> 
+      <a href="/playlists">Playlists</a>
+      <a href="/devices">Devices</a>
+      <a href="/content">Content</a>
+    </div>
 
-
-    <!-- Profile / Account -->
     <div class="nav-right">
+      <div id="clock" class="time-display"></div>
+
       <div class="profile">
         <button class="profile-btn" id="profileToggle">
-          <!-- Avatar image (use placeholder png until user uploads one) -->
-        {% if user.avatar_url %}
-  <img class="avatar" src="{{ user.avatar_url }}" alt="avatar" />
-{% else %}
-  <div class="initials-avatar">
-    {{ user.name.split()[0][0] }}{{ user.name.split()[-1][0] }}
-  </div>
-{% endif %}
-<span>{{ user.name }}</span>
-
+          {% if user.avatar_url %}
+            <img class="avatar" src="{{ user.avatar_url }}" alt="avatar" />
+          {% else %}
+            <div class="initials-avatar">
+              {{ user.name.split()[0][0] }}{{ user.name.split()[-1][0] }}
+            </div>
+          {% endif %}
+          <span>{{ user.name }}</span>
         </button>
 
         <div class="dropdown" id="profileDropdown">
@@ -59,18 +57,108 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- ========== SIMPLE JS (toggle dropdown) ============================== -->
+  <!-- ========== SHARED UTILITIES & TOAST SUPPORT ========================= -->
   <script>
-    const toggle  = document.getElementById('profileToggle');
-    const menu    = document.getElementById('profileDropdown');
+    // Profile dropdown toggle
+    const toggle = document.getElementById('profileToggle');
+    const menu = document.getElementById('profileDropdown');
+
     toggle?.addEventListener('click', () => {
       menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
     });
-    // Hide dropdown when clicking outside
+
     document.addEventListener('click', e => {
-      if (!toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display = 'none';
+      if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+        menu.style.display = 'none';
+      }
     });
+
+    // Clock updater
+    function updateClock() {
+      const clock = document.getElementById('clock');
+      if (!clock) return;
+
+      const now = new Date();
+      const hour12 = {{ "false" if user.prefers_24h else "true" }};
+      const userTimeZone = "{{ user.timezone | default('America/New_York') }}";
+
+      const options = {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: hour12 === "true",
+        timeZone: userTimeZone,
+        timeZoneName: 'short'
+      };
+
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+
+      const fullDate = now.toLocaleString('en-US', {
+        timeZone: userTimeZone,
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: hour12 === "true"
+      });
+
+      clock.textContent = formatter.format(now);
+      clock.title = fullDate + " (" + userTimeZone + ")";
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Inline editing utility
+    function enableEdit(button) {
+      const input = button.previousElementSibling;
+      if (input && input.classList.contains('readonly')) {
+        input.classList.remove('readonly');
+        input.removeAttribute('readonly');
+        input.focus();
+      }
+    }
+
+    // Adjust pill text contrast based on background
+    function adjustPillContrast() {
+      document.querySelectorAll('.pill').forEach(pill => {
+        const bg = window.getComputedStyle(pill).backgroundColor;
+        const rgb = bg.match(/\d+/g).map(Number);
+        const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+        pill.style.color = brightness > 160 ? '#333' : '#fff';
+      });
+    }
+
+    // Toast notification utility
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.className = `toast ${type}`;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 2500);
+    }
+
+    // Run pill contrast logic once DOM is ready
+    document.addEventListener('DOMContentLoaded', adjustPillContrast);
+
+    document.querySelector('.icon-btn')?.addEventListener('click', () => {
+  document.getElementById('avatarModal')?.classList.remove('hidden');
+});
+
+function closeAvatarModal() {
+  document.getElementById('avatarModal')?.classList.add('hidden');
+}
+
   </script>
+
+  <!-- ========== TOAST CONTAINER ========================================= -->
+  <div id="toast" class="toast" style="display: none;"></div>
+
   {% block body_extra %}{% endblock %}
 </body>
 </html>
