@@ -1,0 +1,12 @@
+services:
+  loopi:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./playlists.json:/app/playlists.json
+      - ./metadata.json:/app/metadata.json
+      - ./app/data:/app/app/data
+      - ./app/static/uploads:/app/app/static/uploads
+    restart: unless-stopped

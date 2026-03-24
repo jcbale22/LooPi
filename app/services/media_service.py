@@ -1,7 +1,5 @@
 import aioboto3
 from app.config import R2_BUCKET_NAME, R2_ACCESS_KEY, R2_SECRET_KEY, R2_ENDPOINT_URL
-from app.models.media_asset import MediaAsset
-from app.models import session  # Your DB session manager
 
 session_boto = aioboto3.Session()
 
@@ -30,18 +28,5 @@ async def generate_presigned_url(key, expires_in=3600):
         )
 
 async def save_media_metadata(filename, r2_key, content_type, size, user_id=1, start_date=None, end_date=None, playlists=None):
-    """
-    Save metadata for the uploaded media into the MediaAsset table.
-    """
-    asset = MediaAsset(
-        filename=filename,
-        r2_key=r2_key,
-        content_type=content_type,
-        size=size,
-        user_id=user_id,
-        start_date=start_date,
-        end_date=end_date,
-        playlists=",".join(playlists) if playlists else None
-    )
-    session.add(asset)
-    session.commit()
+    # DB integration not yet implemented — stub for future use
+    pass

@@ -89,4 +89,4 @@ def get_active_images(today: datetime.date = None) -> List[str]:
         except Exception as e:
             print(f"[WARN] Failed parsing date for {filename}: {e}")
 
-    return acti
+    return active
